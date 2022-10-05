@@ -190,18 +190,18 @@ void matFuture( pokemon ***newmat,  size_t rows, size_t cols, pokemon ***mat)
 
 
 
-void vecinos(int x, int y, pokemon ***mat, size_t rows, size_t cols){
+void vecinos(int x, int y, pokemon ***mat, pokemon ***mat2, size_t rows, size_t cols){
 
     for (int r = -1; r<= 1; r++){
         for ( int c = -1; c <= 1; c++ ){
             if (r!=0 || c!=0 ){
 
-                (*mat)[x][y].hp -= damage[(*mat)[x][y].type][(*mat)[x+r][y+c].type];
+                (*mat2)[x][y].hp -= damage[(*mat)[x][y].type][(*mat)[x+r][y+c].type];
                 
-                if ((*mat)[x][y].hp <= 0){
+                if ((*mat2)[x][y].hp <= 0){
 
-                    (*mat)[x][y].type = (*mat)[x+r][y+c].type;
-                    (*mat)[x][y].hp = init_hp;
+                    (*mat2)[x][y].type = (*mat)[x+r][y+c].type;
+                    (*mat2)[x][y].hp = init_hp;
 
                 }
                 
@@ -214,10 +214,10 @@ void vecinos(int x, int y, pokemon ***mat, size_t rows, size_t cols){
 
 
 
-void damage2(pokemon ***mat, size_t rows, size_t cols){
+void damage2(pokemon ***mat,pokemon ***mat2, size_t rows, size_t cols){
     for ( size_t r = 1; r < rows+1; r++ ){ 
         for ( size_t c = 1; c < cols+1; c++ ){     
-            vecinos(r,c, &(*mat), rows+2,cols+2);
+            vecinos(r,c, &(*mat),&(*mat2), rows+2,cols+2);
         } 
     }
 }
@@ -232,26 +232,40 @@ void print_ppm(pokemon ***mat, size_t rows, size_t cols, char *filename){
 
     for (size_t i=1; i<rows; i++){
         for (size_t j = 1; j<cols; j++){
-            printf("%s ", (colors[(*mat)[i][j].type]));
-            fprintf(filepointer, "%s", (colors[(*mat)[i][j].type]));
+            printf("%s", (colors[(*mat)[i][j].type]));
+            
+            fprintf(filepointer, "%s ", (colors[(*mat)[i][j].type]));
         }
     }
 }
 
-void n_ppm(pokemon ***mat, size_t rows, size_t cols, int n, int r){
+void n_ppm(pokemon ***mat,pokemon ***mat2, size_t rows, size_t cols, int n, int r){
     int prints = 1;
     while (prints<=(n)){
-        damage2(&(*mat),rows,cols);
+        damage2(&(*mat),&(*mat2),rows,cols);
         if ((prints == 1) || (prints == n))
             {
                 char filename[20];
                 sprintf(filename, "%i.ppm", prints);
-                print_ppm(&(*mat),rows,cols,filename);
+                print_ppm(&(*mat2),rows,cols,filename);
             }
         prints++;
 
     }
 }
+
+void freeMat(pokemon ***mat, size_t rows, size_t cols) {
+    
+        for (size_t i = 0; i < rows; ++i) {
+                free((*mat)[i]);
+                (*mat)[i] = NULL;
+            }
+        
+        free(*mat);
+        *mat = NULL;
+}
+
+
 
 int game(int argc, char *argv[]){
 
@@ -277,7 +291,12 @@ int game(int argc, char *argv[]){
 
     matFuture(&mat2, rows, cols, &mat1);
 
-    n_ppm(&mat2, rows, cols, n,2);
+    n_ppm(&mat1,&mat2, rows, cols, n,2);
+    
+    freeMat(&mat1,rows,cols);
+    freeMat(&mat2, rows, cols);
+
+    
 
 
 }
